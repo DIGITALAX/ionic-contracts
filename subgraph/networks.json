@@ -1,0 +1,8 @@
+{
+  "lens-testnet": {
+    "AccessControl": {
+      "address": "0x2cF8A4696010066AB7035328BeC209eCB4d93Fb8",
+      "startBlock": 4129101
+    }
+  }
+}
