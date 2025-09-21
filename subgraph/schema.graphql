@@ -1,39 +1,123 @@
-type AdminAdded @entity(immutable: true) {
+type Appraisal @entity {
   id: Bytes!
-  admin: Bytes! # address
+  appraiser: Bytes! # address
+  nftId: BigInt! # uint256
+  conductorId: BigInt! # uint256
+  appraisalId: BigInt! # uint256
+  overallScore: BigInt! # uint256
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
+  uri: String!
+  reactions: [ReactionUsage!]
 }
 
-type AdminRemoved @entity(immutable: true) {
+type ReactionUsage @entity {
   id: Bytes!
-  admin: Bytes! # address
+  reaction: Reaction
+  count: BigInt!
+}
+
+type NFT @entity {
+  id: Bytes!
+  nftId: BigInt! # uint256
+  contractAddress: Bytes! # address
+  tokenId: BigInt! # uint256
+  submitter: Bytes! # address
+  tokenType: Int! # uint8
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
+  active: Boolean!
+  appraisalCount: BigInt!
+  totalScore: BigInt!
+  averageScore: BigInt!
+  appraisals: [Appraisal!]
 }
 
-type AdminRevoked @entity(immutable: true) {
+type Conductor @entity {
   id: Bytes!
-
+  wallet: Bytes! # address
+  conductorId: BigInt! # uint256
+  uri: String! # string
   blockNumber: BigInt!
   blockTimestamp: BigInt!
   transactionHash: Bytes!
+  appraisalCount: BigInt!
+  totalScore: BigInt!
+  averageScore: BigInt!
+  trustCount: BigInt!
+  totalTrustScore: BigInt!
+  averageTrustScore: BigInt!
+  inviteCount: BigInt!
+  availableInvites: BigInt!
+  appraisals: [Appraisal!]
+  trusts: [Trust!]
+  invitedDesigners: [Designer!]
 }
 
-type MonaTokenUpdated @entity(immutable: true) {
+type Reviewer @entity {
   id: Bytes!
-  newToken: Bytes! # address
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
+  wallet: Bytes!
+  scores: [Trust!]
 }
 
-type PodeTokenUpdated @entity(immutable: true) {
+type Trust @entity {
   id: Bytes!
-  newToken: Bytes! # address
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
+  reviewer: Reviewer
+  trustId: BigInt!
+  conductorId: BigInt!
+  trustScore: BigInt!
+  timestamp: BigInt!
+  commentsUri: String!
+  reactions: [ReactionUsage!]
+}
+
+type Designer @entity {
+  id: Bytes!
+  wallet: Bytes!
+  invitedBy: Conductor
+  active: Boolean!
+  designerId: BigInt!
+  inviteTimestamp: BigInt!
+  packCount: BigInt!
+  reactionPacks: [ReactionPack!]
+  uri: String
+}
+
+type Reaction @entity {
+  id: Bytes!
+  reactionId: BigInt!
+  packId: BigInt!
+  pack: ReactionPack
+  reactionUri: String!
+  tokenIds: [BigInt!]
+}
+
+type ReactionPack @entity {
+  id: Bytes!
+  designer: Bytes!
+  packId: BigInt!
+  currentPrice: BigInt!
+  maxEditions: BigInt!
+  soldCount: BigInt!
+  basePrice: BigInt!
+  priceIncrement: BigInt!
+  conductorReservedSpots: BigInt!
+  active: Boolean!
+  packUri: String!
+  reactions: [Reaction!]!
+  purchases: [Purchase!]
+}
+
+type Purchase @entity {
+  id: Bytes!
+  buyer: Bytes!
+  purchaseId: BigInt!
+  packId: BigInt!
+  price: BigInt!
+  editionNumber: BigInt!
+  shareWeight: BigInt!
+  timestamp: BigInt!
   transactionHash: Bytes!
 }

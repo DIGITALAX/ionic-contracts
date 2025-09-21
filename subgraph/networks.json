@@ -1,8 +1,16 @@
 {
   "lens-testnet": {
-    "AccessControl": {
-      "address": "0x2cF8A4696010066AB7035328BeC209eCB4d93Fb8",
-      "startBlock": 4129101
+    "IonicAppraisals": {
+      "address": "0x37f11Ca71E0d705582fE5642dFb042f889470731"
+    },
+    "IonicConductors": {
+      "address": "0x37f11Ca71E0d705582fE5642dFb042f889470731"
+    },
+    "IonicReactionPacks": {
+      "address": "0x37f11Ca71E0d705582fE5642dFb042f889470731"
+    },
+    "IonicDesigners": {
+      "address": "0x37f11Ca71E0d705582fE5642dFb042f889470731"
     }
   }
 }

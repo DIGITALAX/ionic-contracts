@@ -1,13 +1,13 @@
 {
-  "name": "appraisals",
+  "name": "ionic",
   "license": "UNLICENSED",
   "scripts": {
     "codegen": "graph codegen",
     "build": "graph build",
-    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ appraisals",
-    "create-local": "graph create --node http://localhost:8020/ appraisals",
-    "remove-local": "graph remove --node http://localhost:8020/ appraisals",
-    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 appraisals",
+    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ ionic",
+    "create-local": "graph create --node http://localhost:8020/ ionic",
+    "remove-local": "graph remove --node http://localhost:8020/ ionic",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 ionic",
     "test": "graph test"
   },
   "dependencies": {
