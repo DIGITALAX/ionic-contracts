@@ -78,7 +78,7 @@ contract SetupTest is Test {
         assertEq(conductors.getConductorCount(), 0);
         assertEq(designers.getDesignerCount(), 0);
         assertEq(appraisals.getNFTCount(), 0);
-        assertEq(reactionPacks.get_packCount(), 0);
+        assertEq(reactionPacks.getPackCount(), 0);
         
         assertEq(reactionPacks.defaultBasePrice(), BASE_PRICE);
         assertEq(reactionPacks.defaultPriceIncrement(), PRICE_INCREMENT);

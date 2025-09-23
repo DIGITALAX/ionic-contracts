@@ -30,7 +30,7 @@ contract AppraisalsTest is SetupTest {
         assertEq(conductors.getConductorCount(), 2); // 2 conductors registered in setUp
         assertEq(designers.getDesignerCount(), 0);
         assertEq(appraisals.getNFTCount(), 0);
-        assertEq(reactionPacks.get_packCount(), 0);
+        assertEq(reactionPacks.getPackCount(), 0);
 
         assertEq(reactionPacks.defaultBasePrice(), BASE_PRICE);
         assertEq(reactionPacks.defaultPriceIncrement(), PRICE_INCREMENT);

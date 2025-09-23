@@ -54,7 +54,7 @@ contract EndToEndTest is SetupTest {
         assertEq(pack.designer, designer1);
         assertEq(pack.maxEditions, 5);
         assertEq(pack.currentPrice, BASE_PRICE);
-        assertEq(reactionPacks.get_packCount(), 1);
+        assertEq(reactionPacks.getPackCount(), 1);
 
         // Step 4: Conductor2 purchases reaction pack
         uint256 conductor2BalanceBefore = monaToken.balanceOf(conductor2);
@@ -258,7 +258,7 @@ contract EndToEndTest is SetupTest {
         assertEq(designers.getDesignerCount(), 2); // designer1, user2
         assertEq(appraisals.getNFTCount(), 10); // 10 NFTs submitted
         assertEq(appraisals.getAppraisalCount(), 10); // 10 appraisals created
-        assertEq(reactionPacks.get_packCount(), 2); // 2 reaction packs created
+        assertEq(reactionPacks.getPackCount(), 2); // 2 reaction packs created
 
         // Verify final stats for both conductors
         IonicLibrary.Conductor memory conductor1VeryFinal = conductors
@@ -438,7 +438,7 @@ contract EndToEndTest is SetupTest {
             uris
         );
 
-        assertEq(reactionPacks.get_packCount(), 1);
+        assertEq(reactionPacks.getPackCount(), 1);
 
         // 4. Conductor purchases pack
         IonicLibrary.ReactionPack memory pack = reactionPacks.getReactionPack(

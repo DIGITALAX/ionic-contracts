@@ -6,7 +6,7 @@ import "./Setup.t.sol";
 contract ReactionPacksTest is SetupTest {
     
     function testInitialReactionPackState() public view {
-        assertEq(reactionPacks.get_packCount(), 0);
+        assertEq(reactionPacks.getPackCount(), 0);
         assertEq(reactionPacks.defaultBasePrice(), BASE_PRICE);
         assertEq(reactionPacks.defaultPriceIncrement(), PRICE_INCREMENT);
     }
@@ -34,7 +34,7 @@ contract ReactionPacksTest is SetupTest {
             reactionUris
         );
         
-        assertEq(reactionPacks.get_packCount(), 1);
+        assertEq(reactionPacks.getPackCount(), 1);
         assertEq(packId, 1);
         
         IonicLibrary.ReactionPack memory pack = reactionPacks.getReactionPack(packId);

@@ -131,4 +131,14 @@ contract IonicLibrary {
         string uri;
         ReviewerStats stats;
     }
+
+    struct Token {
+        address minter;
+        uint256 reason;
+    }
+
+    struct Minter {
+        address minter;
+        uint256 reason;
+    }
 }

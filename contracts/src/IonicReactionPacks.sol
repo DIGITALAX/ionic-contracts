@@ -248,11 +248,11 @@ contract IonicReactionPacks is ERC721 {
         return _reactions[reactionId];
     }
 
-    function get_packCount() external view returns (uint256) {
+    function getPackCount() external view returns (uint256) {
         return _packCount;
     }
 
-    function get_reactionCount() external view returns (uint256) {
+    function getReactionCount() external view returns (uint256) {
         return _reactionCount;
     }
 
