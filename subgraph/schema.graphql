@@ -2,6 +2,7 @@ type Appraisal @entity {
   id: Bytes!
   appraiser: Bytes! # address
   nftId: BigInt! # uint256
+  nftContract: Bytes!
   conductorId: BigInt! # uint256
   appraisalId: BigInt! # uint256
   overallScore: BigInt! # uint256
@@ -10,6 +11,20 @@ type Appraisal @entity {
   transactionHash: Bytes!
   uri: String!
   reactions: [ReactionUsage!]
+  metadata: Metadata
+  conductor: Conductor
+}
+
+type Metadata @entity {
+  id: String!
+  comment: String!
+  reactions: [ResponseMetadata!]
+}
+
+type ResponseMetadata @entity {
+  id: String!
+  emoji: String!
+  count: BigInt!
 }
 
 type ReactionUsage @entity {
@@ -21,7 +36,7 @@ type ReactionUsage @entity {
 type NFT @entity {
   id: Bytes!
   nftId: BigInt! # uint256
-  contractAddress: Bytes! # address
+  nftContract: Bytes! # address
   tokenId: BigInt! # uint256
   submitter: Bytes! # address
   tokenType: Int! # uint8
@@ -37,6 +52,7 @@ type NFT @entity {
 
 type Conductor @entity {
   id: Bytes!
+  metadata: BaseMetadata
   wallet: Bytes! # address
   conductorId: BigInt! # uint256
   uri: String! # string
@@ -46,36 +62,46 @@ type Conductor @entity {
   appraisalCount: BigInt!
   totalScore: BigInt!
   averageScore: BigInt!
-  trustCount: BigInt!
-  totalTrustScore: BigInt!
-  averageTrustScore: BigInt!
+  reviewCount: BigInt!
+  totalReviewScore: BigInt!
+  averageReviewScore: BigInt!
   inviteCount: BigInt!
   availableInvites: BigInt!
   appraisals: [Appraisal!]
-  trusts: [Trust!]
+  reviews: [Review!]
   invitedDesigners: [Designer!]
+  notAppraised: [NFT!]
 }
 
 type Reviewer @entity {
   id: Bytes!
   wallet: Bytes!
-  scores: [Trust!]
+  uri: String!
+  metadata: BaseMetadata
+  reviews: [Review!]
+  reviewCount: BigInt!
+  totalScore: BigInt!
+  averageScore: BigInt!
+  lastReviewTimestamp: BigInt!
 }
 
-type Trust @entity {
+type Review @entity {
   id: Bytes!
   reviewer: Reviewer
-  trustId: BigInt!
+  reviewId: BigInt!
   conductorId: BigInt!
-  trustScore: BigInt!
+  conductor: Conductor
+  reviewScore: BigInt!
   timestamp: BigInt!
-  commentsUri: String!
+  uri: String!
+  metadata: Metadata
   reactions: [ReactionUsage!]
 }
 
 type Designer @entity {
   id: Bytes!
   wallet: Bytes!
+  metadata: BaseMetadata
   invitedBy: Conductor
   active: Boolean!
   designerId: BigInt!
@@ -91,12 +117,14 @@ type Reaction @entity {
   packId: BigInt!
   pack: ReactionPack
   reactionUri: String!
+  reactionMetadata: ReactionMetadata
   tokenIds: [BigInt!]
 }
 
 type ReactionPack @entity {
   id: Bytes!
   designer: Bytes!
+  designerProfile: Designer
   packId: BigInt!
   currentPrice: BigInt!
   maxEditions: BigInt!
@@ -106,6 +134,7 @@ type ReactionPack @entity {
   conductorReservedSpots: BigInt!
   active: Boolean!
   packUri: String!
+  packMetadata: BaseMetadata
   reactions: [Reaction!]!
   purchases: [Purchase!]
 }
@@ -120,4 +149,33 @@ type Purchase @entity {
   shareWeight: BigInt!
   timestamp: BigInt!
   transactionHash: Bytes!
+  pack: ReactionPack
+}
+
+type TokenReaction @entity {
+  id: Bytes!
+  tokenId: BigInt!
+  reaction: Reaction!
+}
+
+type BaseMetadata @entity {
+  id: String!
+  title: String!
+  image: String
+  description: String
+}
+
+type ReactionMetadata @entity {
+  id: String!
+  title: String!
+  image: String
+  description: String
+  model: String
+  workflow: String
+  prompt: String
+}
+
+type ConductorRegistry @entity {
+  id: String!
+  conductorIds: [BigInt!]!
 }
