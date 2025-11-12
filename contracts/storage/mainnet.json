@@ -1,7 +1,11 @@
 {
-  "accessControl": "",
+  "accessControl": "0x7E1aa4b8Fa6633F944C6F9F17267C81f8B7c1e1a",
   "conductors": "",
   "appraisals": "",
   "designers": "",
-  "reactionPacks": ""
+  "reactionPacks": "",
+  "nft": "0x8E2318511fFCc846EA646902a8cb8326F4d07E56",
+  "genesis": "0xE69dAB02100d3989bCA736a0FE1239CbFcf2cE01"
 }
+
+

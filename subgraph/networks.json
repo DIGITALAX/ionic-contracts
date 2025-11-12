@@ -1,16 +1,19 @@
 {
   "lens-testnet": {
     "IonicAppraisals": {
-      "address": "0x37f11Ca71E0d705582fE5642dFb042f889470731"
+      "address": "0xd83Ce31575E465694bdcb8E3688B189a39f34eA7"
     },
     "IonicConductors": {
-      "address": "0x37f11Ca71E0d705582fE5642dFb042f889470731"
+      "address": "0xC6CcCebF8c151f253d5AdCDE5bd3F09d4a75caaD"
     },
     "IonicReactionPacks": {
-      "address": "0x37f11Ca71E0d705582fE5642dFb042f889470731"
+      "address": "0x553bad5BeD228A5B96153Dd397DcE9e6F76B45C4"
     },
     "IonicDesigners": {
-      "address": "0x37f11Ca71E0d705582fE5642dFb042f889470731"
+      "address": "0xb87C571737536F8A4F26da0ce6518ecfE9e92C6f"
+    },
+    "IonicNFT": {
+      "address": "0xb8CfdBEF2721C51d8cC76Cd0FaA6B9799bF05123"
     }
   }
 }

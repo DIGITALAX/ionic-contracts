@@ -31,13 +31,13 @@ contract IonicAppraisals {
         _;
     }
 
-    modifier onlyConductor() {
-        if (!accessControl.isConductor(msg.sender)) {
+    modifier onlyConductor(uint256 tokenId) {
+        if (!accessControl.isConductor(msg.sender, tokenId)) {
             revert IonicErrors.Unauthorized();
         }
+
         _;
     }
-
     event NFTSubmitted(
         uint256 indexed nftId,
         address indexed contractAddress,
@@ -126,8 +126,15 @@ contract IonicAppraisals {
         uint256 overallScore,
         string calldata uri,
         IonicLibrary.ReactionUsage[] calldata reactions
-    ) external onlyConductor {
-        _createAppraisal(nftContract, nftId, conductorId, overallScore, uri, reactions);
+    ) external onlyConductor(conductorId) {
+        _createAppraisal(
+            nftContract,
+            nftId,
+            conductorId,
+            overallScore,
+            uri,
+            reactions
+        );
     }
 
     function createAppraisalBatch(
@@ -137,18 +144,17 @@ contract IonicAppraisals {
         uint256[] calldata overallScores,
         string[] calldata uris,
         IonicLibrary.ReactionUsage[][] calldata reactions
-    ) external onlyConductor {
-        uint256 length = nftIds.length;
+    ) external onlyConductor(conductorId) {
         if (
-            length != overallScores.length ||
-            length != uris.length ||
-            length != reactions.length ||
-            length != nftContracts.length
+            nftIds.length != overallScores.length ||
+            nftIds.length != uris.length ||
+            nftIds.length != reactions.length ||
+            nftIds.length != nftContracts.length
         ) {
             revert IonicErrors.InvalidInput();
         }
 
-        for (uint256 i; i < length; ) {
+        for (uint256 i; i < nftIds.length; ) {
             _createAppraisal(
                 nftContracts[i],
                 nftIds[i],
@@ -171,6 +177,35 @@ contract IonicAppraisals {
         string memory uri,
         IonicLibrary.ReactionUsage[] memory reactions
     ) internal {
+        _validateAppraisalInputs(nftId, conductorId, overallScore);
+        _validateReactions(msg.sender, reactions);
+
+        _updateNFTStats(nftId, conductorId, overallScore);
+        uint256 newAppraisalId = _recordAppraisal(
+            nftContract,
+            nftId,
+            conductorId,
+            overallScore,
+            uri,
+            reactions
+        );
+        _updateGlobalStats(overallScore);
+        _notifyConductor(conductorId, newAppraisalId, overallScore);
+
+        emit AppraisalCreated(
+            msg.sender,
+            nftId,
+            conductorId,
+            newAppraisalId,
+            overallScore
+        );
+    }
+
+    function _validateAppraisalInputs(
+        uint256 nftId,
+        uint256 conductorId,
+        uint256 overallScore
+    ) private view {
         IonicLibrary.NFT storage nft = _nfts[nftId];
 
         if (nft.nftId == 0) {
@@ -188,32 +223,47 @@ contract IonicAppraisals {
         IonicLibrary.Conductor memory conductor = conductors.getConductor(
             conductorId
         );
-        if (conductor.conductorId == 0 || conductor.wallet != msg.sender) {
+        if (conductor.conductorId == 0) {
             revert IonicErrors.ConductorNotFound();
         }
+    }
 
-        _validateReactions(msg.sender, reactions);
-
+    function _recordAppraisal(
+        address nftContract,
+        uint256 nftId,
+        uint256 conductorId,
+        uint256 overallScore,
+        string memory uri,
+        IonicLibrary.ReactionUsage[] memory reactions
+    ) private returns (uint256) {
         appraisalCount++;
 
-        _appraisals[appraisalCount] = IonicLibrary.Appraisal({
-            appraiser: msg.sender,
-            appraisalId: appraisalCount,
-            nftContract: nftContract,
-            nftId: nftId,
-            conductorId: conductorId,
-            overallScore: overallScore,
-            timestamp: block.timestamp,
-            uri: uri,
-            reactions: new IonicLibrary.ReactionUsage[](0)
-        });
+        IonicLibrary.Appraisal storage appraisal = _appraisals[appraisalCount];
+        appraisal.appraiser = msg.sender;
+        appraisal.appraisalId = appraisalCount;
+        appraisal.nftContract = nftContract;
+        appraisal.nftId = nftId;
+        appraisal.conductorId = conductorId;
+        appraisal.overallScore = overallScore;
+        appraisal.timestamp = block.timestamp;
+        appraisal.uri = uri;
 
         for (uint256 i = 0; i < reactions.length; i++) {
-            _appraisals[appraisalCount].reactions.push(reactions[i]);
+            appraisal.reactions.push(reactions[i]);
         }
 
         _nftAppraisals[nftId].push(appraisalCount);
+        _latestAppraisal[nftId][conductorId] = appraisalCount;
 
+        return appraisalCount;
+    }
+
+    function _updateNFTStats(
+        uint256 nftId,
+        uint256 conductorId,
+        uint256 overallScore
+    ) private {
+        IonicLibrary.NFT storage nft = _nfts[nftId];
         uint256 previousAppraisalId = _latestAppraisal[nftId][conductorId];
 
         if (previousAppraisalId == 0) {
@@ -225,25 +275,20 @@ contract IonicAppraisals {
             nft.totalScore = nft.totalScore - previousScore + overallScore;
         }
 
-        _latestAppraisal[nftId][conductorId] = appraisalCount;
         nft.averageScore = nft.totalScore / nft.appraisalCount;
+    }
 
+    function _updateGlobalStats(uint256 overallScore) private {
         _globalStats.totalAppraisals++;
         _globalStats.scoreDistribution[overallScore]++;
+    }
 
-        conductors.updateConductorStats(
-            conductorId,
-            appraisalCount,
-            overallScore
-        );
-
-        emit AppraisalCreated(
-            msg.sender,
-            nftId,
-            conductorId,
-            appraisalCount,
-            overallScore
-        );
+    function _notifyConductor(
+        uint256 conductorId,
+        uint256 appraisalId,
+        uint256 overallScore
+    ) private {
+        conductors.updateConductorStats(conductorId, appraisalId, overallScore);
     }
 
     function getNFT(

@@ -4,13 +4,13 @@ pragma solidity ^0.8.28;
 import "./IonicErrors.sol";
 import "./IonicAccessControl.sol";
 import "./IonicLibrary.sol";
-import "./IonicConductors.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "./IonicDesigners.sol";
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract IonicNFT is ERC721Enumerable {
+contract GenesisNFT is ERC721 {
     IonicAccessControl public accessControl;
-    IonicConductors public conductors;
+    IonicDesigners public designers;
     uint256 private _tokenCounter;
     IonicLibrary.Minter[] private _mintersList;
 
@@ -29,7 +29,7 @@ contract IonicNFT is ERC721Enumerable {
     mapping(uint256 => string) private _tokenURIReason;
     mapping(address => bool) private _authorizedMinters;
 
-    constructor(address _accessControl) ERC721("IonicNFT", "IONIC") {
+    constructor(address _accessControl) ERC721("GenesisNFT", "GENESIS") {
         accessControl = IonicAccessControl(_accessControl);
         _tokenCounter = 0;
     }
@@ -37,10 +37,6 @@ contract IonicNFT is ERC721Enumerable {
     function mint() external {
         if (!_authorizedMinters[msg.sender]) {
             revert IonicErrors.Unauthorized();
-        }
-
-        if (balanceOf(msg.sender) > 0) {
-            revert IonicErrors.AlreadyExists();
         }
 
         uint256 reason = _getMinterReason(msg.sender);
@@ -55,8 +51,6 @@ contract IonicNFT is ERC721Enumerable {
 
         _authorizedMinters[msg.sender] = false;
         _removeMinterFromList(msg.sender);
-
-        conductors.createConductor(_tokenCounter, msg.sender);
 
         emit TokenMinted(msg.sender, _tokenCounter);
     }
@@ -131,23 +125,5 @@ contract IonicNFT is ERC721Enumerable {
 
     function setAccessControl(address _accessControl) external onlyAdmin {
         accessControl = IonicAccessControl(_accessControl);
-    }
-
-    function setConductors(address _conductors) external onlyAdmin {
-        conductors = IonicConductors(_conductors);
-    }
-
-    
-    function burn(uint256 tokenId) external {
-        if (msg.sender != address(conductors)) {
-            revert IonicErrors.Unauthorized();
-        }
-
-        uint256 conductorId = conductors.getConductorIdByTokenId(tokenId);
-        if (conductorId != 0) {
-            conductors.deleteConductor(tokenId);
-        }
-
-        _burn(tokenId);
     }
 }

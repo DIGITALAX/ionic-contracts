@@ -5,12 +5,14 @@ import "./IonicErrors.sol";
 import "./IonicAccessControl.sol";
 import "./IonicLibrary.sol";
 import "./IonicDesigners.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "./IonicConductors.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract IonicReactionPacks is ERC721 {
+contract IonicReactionPacks is ERC721Enumerable {
     IonicAccessControl public accessControl;
     IonicDesigners public designers;
+    IonicConductors public conductors;
     uint256 private _packCount;
     uint256 private _reactionCount;
     uint256 private _tokenIdCounter;
@@ -83,6 +85,30 @@ contract IonicReactionPacks is ERC721 {
         string memory packUri,
         string[] memory reactionUris
     ) external onlyDesigner returns (uint256) {
+        _validatePackCreation(maxEditions, conductorReservedSpots);
+
+        uint256 newPackId = _initializeReactionPack(
+            maxEditions,
+            conductorReservedSpots,
+            packUri
+        );
+        _addReactionsTopack(newPackId, reactionUris);
+
+        emit ReactionPackCreated(
+            msg.sender,
+            newPackId,
+            defaultBasePrice,
+            maxEditions,
+            conductorReservedSpots
+        );
+
+        return newPackId;
+    }
+
+    function _validatePackCreation(
+        uint256 maxEditions,
+        uint256 conductorReservedSpots
+    ) private pure {
         if (
             conductorReservedSpots < MIN_CONDUCTOR_SPOTS ||
             conductorReservedSpots > MAX_CONDUCTOR_SPOTS
@@ -90,10 +116,16 @@ contract IonicReactionPacks is ERC721 {
             revert IonicErrors.InvalidPrice();
         }
 
-        if (maxEditions == 0 || reactionUris.length == 0) {
+        if (maxEditions == 0) {
             revert IonicErrors.InvalidPrice();
         }
+    }
 
+    function _initializeReactionPack(
+        uint256 maxEditions,
+        uint256 conductorReservedSpots,
+        string memory packUri
+    ) private returns (uint256) {
         _packCount++;
 
         _reactionPacks[_packCount] = IonicLibrary.ReactionPack({
@@ -110,33 +142,52 @@ contract IonicReactionPacks is ERC721 {
             buyerShares: new uint256[](0)
         });
 
+        return _packCount;
+    }
+
+    function _addReactionsTopack(
+        uint256 packId,
+        string[] memory reactionUris
+    ) private {
+        if (reactionUris.length == 0) {
+            revert IonicErrors.InvalidPrice();
+        }
+
+        IonicLibrary.ReactionPack storage pack = _reactionPacks[packId];
+
         for (uint256 i = 0; i < reactionUris.length; i++) {
             _reactionCount++;
 
             _reactions[_reactionCount] = IonicLibrary.Reaction({
                 reactionId: _reactionCount,
-                packId: _packCount,
+                packId: packId,
                 reactionUri: reactionUris[i],
                 tokenIds: new uint256[](0)
             });
 
-            _reactionPacks[_packCount].reactionIds.push(_reactionCount);
+            pack.reactionIds.push(_reactionCount);
 
-            emit ReactionAdded(_packCount, _reactionCount, reactionUris[i]);
+            emit ReactionAdded(packId, _reactionCount, reactionUris[i]);
         }
-
-        emit ReactionPackCreated(
-            msg.sender,
-            _packCount,
-            defaultBasePrice,
-            maxEditions,
-            conductorReservedSpots
-        );
-
-        return _packCount;
     }
 
     function purchaseReactionPack(uint256 packId) external {
+        _validatePurchase(packId);
+
+        uint256 purchasePrice = _reactionPacks[packId].currentPrice;
+        address monaTokenAddr = accessControl.monaToken();
+
+        _distributeRevenue(
+            _reactionPacks[packId],
+            purchasePrice,
+            msg.sender,
+            monaTokenAddr
+        );
+        _recordPurchase(packId, purchasePrice);
+        _mintReactionTokens(packId);
+    }
+
+    function _validatePurchase(uint256 packId) private view {
         IonicLibrary.ReactionPack storage pack = _reactionPacks[packId];
 
         if (pack.packId == 0) {
@@ -151,14 +202,15 @@ contract IonicReactionPacks is ERC721 {
             revert IonicErrors.SoldOut();
         }
 
-        bool isConductor = accessControl.isConductor(msg.sender);
-
+        uint256 conductorId = conductors.getConductorId(msg.sender);
+        bool isConductor = conductorId != 0;
         if (pack.soldCount < pack.conductorReservedSpots && !isConductor) {
             revert IonicErrors.ConductorSpotsOnly();
         }
 
         uint256 purchasePrice = pack.currentPrice;
-        IERC20 monaToken = IERC20(accessControl.monaToken());
+        address monaTokenAddr = accessControl.monaToken();
+        IERC20 monaToken = IERC20(monaTokenAddr);
         if (monaToken.balanceOf(msg.sender) < purchasePrice) {
             revert IonicErrors.InsufficientBalance();
         }
@@ -166,8 +218,10 @@ contract IonicReactionPacks is ERC721 {
         if (monaToken.allowance(msg.sender, address(this)) < purchasePrice) {
             revert IonicErrors.InsufficientBalance();
         }
+    }
 
-        _distributeRevenue(pack, purchasePrice, msg.sender, address(monaToken));
+    function _recordPurchase(uint256 packId, uint256 purchasePrice) private {
+        IonicLibrary.ReactionPack storage pack = _reactionPacks[packId];
 
         pack.soldCount++;
         pack.currentPrice += defaultPriceIncrement;
@@ -190,13 +244,22 @@ contract IonicReactionPacks is ERC721 {
         _packPurchases[packId].push(_purchaseCount);
         _buyerPurchases[msg.sender].push(_purchaseCount);
 
-        for (uint256 i = 0; i < pack.reactionIds.length; i++) {
+        emit PackPurchased(
+            msg.sender,
+            _purchaseCount,
+            packId,
+            purchasePrice,
+            pack.soldCount
+        );
+    }
+
+    function _mintReactionTokens(uint256 packId) private {
+        uint256[] memory reactionIds = _reactionPacks[packId].reactionIds;
+        for (uint256 i = 0; i < reactionIds.length; i++) {
             _tokenIdCounter++;
             _mint(msg.sender, _tokenIdCounter);
-            _reactions[pack.reactionIds[i]].tokenIds.push(_tokenIdCounter);
+            _reactions[reactionIds[i]].tokenIds.push(_tokenIdCounter);
         }
-
-        emit PackPurchased(msg.sender, _purchaseCount, packId, purchasePrice, pack.soldCount);
     }
 
     function _distributeRevenue(
@@ -225,7 +288,11 @@ contract IonicReactionPacks is ERC721 {
             uint256 buyerPayout = (buyerSharePool * pack.buyerShares[i]) /
                 totalShares;
             if (buyerPayout > 0) {
-                IERC20(monaToken).transferFrom(buyer, pack.buyers[i], buyerPayout);
+                IERC20(monaToken).transferFrom(
+                    buyer,
+                    pack.buyers[i],
+                    buyerPayout
+                );
             }
         }
     }
@@ -292,5 +359,9 @@ contract IonicReactionPacks is ERC721 {
 
     function setDesigners(address _designers) external onlyAdmin {
         designers = IonicDesigners(_designers);
+    }
+
+    function setConductors(address _conductors) external onlyAdmin {
+        conductors = IonicConductors(_conductors);
     }
 }

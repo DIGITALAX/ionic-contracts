@@ -12,22 +12,23 @@ contract AppraisalsTest is SetupTest {
         super.setUp();
 
         vm.prank(conductor1);
-        conductors.registerProfile("ipfs://conductor1");
-        conductor1Id = conductors.getConductorByWallet(conductor1).conductorId;
+        conductors.updateProfile(1, "ipfs://conductor1");
+        conductor1Id = conductors.getConductorId(conductor1);
 
         vm.prank(conductor2);
-        conductors.registerProfile("ipfs://conductor2");
-        conductor2Id = conductors.getConductorByWallet(conductor2).conductorId;
+        conductors.updateProfile(2, "ipfs://conductor2");
+        conductor2Id = conductors.getConductorId(conductor2);
     }
 
     function testDeploymentAndInitialState() public view override {
         // Test initial contract states (AppraisalsTest has 2 registered conductors)
         assertEq(accessControl.isAdmin(admin), true);
-        assertEq(accessControl.isConductor(conductor1), true);
-        assertEq(accessControl.isConductor(conductor2), true);
-        assertEq(accessControl.isConductor(user1), false);
+        assertEq(conductors.getConductorId(conductor1) != 0, true);
+        assertEq(conductors.getConductorId(conductor2) != 0, true);
+        assertEq(conductors.getConductorId(user1) == 0, true);
 
-        assertEq(conductors.getConductorCount(), 2); // 2 conductors registered in setUp
+        assertEq(ionicToken.balanceOf(conductor1), 1);
+        assertEq(ionicToken.balanceOf(conductor2), 1);
         assertEq(designers.getDesignerCount(), 0);
         assertEq(appraisals.getNFTCount(), 0);
         assertEq(reactionPacks.getPackCount(), 0);
@@ -123,10 +124,15 @@ contract AppraisalsTest is SetupTest {
         );
 
         vm.prank(admin);
-        ionicToken.mint(user1, 1);
+        IonicLibrary.Minter[] memory newMinters = new IonicLibrary.Minter[](1);
+        newMinters[0] = IonicLibrary.Minter({minter: user1, reason: 1});
+        ionicToken.authorizeMinters(newMinters);
+
         vm.prank(user1);
-        conductors.registerProfile("ipfs://user1");
-        uint256 user1Id = conductors.getConductorByWallet(user1).conductorId;
+        ionicToken.mint();
+        vm.prank(user1);
+        conductors.updateProfile(3, "ipfs://user1");
+        uint256 user1Id = conductors.getConductorId(user1);
 
         vm.prank(user1);
         appraisals.createAppraisal(

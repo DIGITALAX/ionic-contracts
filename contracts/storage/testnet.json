@@ -1,8 +1,11 @@
 {
-  "accessControl": "0x2cF8A4696010066AB7035328BeC209eCB4d93Fb8",
-  "conductors": "",
-  "appraisals": "",
-  "designers": "",
-  "reactionPacks": "",
+  "accessControl": "0x3d8c22C3A62faD1E979cd8867a1e4AF71c3082C2",
+  "conductors": "0xC6CcCebF8c151f253d5AdCDE5bd3F09d4a75caaD",
+  "appraisals": "0xd83Ce31575E465694bdcb8E3688B189a39f34eA7",
+  "designers": "0xb87C571737536F8A4F26da0ce6518ecfE9e92C6f",
+  "reactionPacks": "0x553bad5BeD228A5B96153Dd397DcE9e6F76B45C4",
+  "nft": "0xb8CfdBEF2721C51d8cC76Cd0FaA6B9799bF05123",
   "mona": "0x18921123f3457AD3c974f2edfCb1053FB29450AC"
 }
+
+

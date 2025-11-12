@@ -25,6 +25,7 @@ export function handleAppraisalCreated(event: AppraisalCreatedEvent): void {
   entity.nftContract = data.nftContract;
   entity.conductorId = event.params.conductorId;
   entity.appraisalId = event.params.appraisalId;
+
   entity.overallScore = event.params.overallScore;
   entity.conductor = Bytes.fromByteArray(
     Bytes.fromBigInt(event.params.conductorId)
@@ -72,8 +73,6 @@ export function handleAppraisalCreated(event: AppraisalCreatedEvent): void {
   }
   entity.reactions = reactions;
 
-  entity.save();
-
   let conductor = Conductor.load(
     Bytes.fromByteArray(ByteArray.fromBigInt(event.params.conductorId))
   );
@@ -108,17 +107,26 @@ export function handleAppraisalCreated(event: AppraisalCreatedEvent): void {
   );
 
   if (nftEntity) {
-    let appraisals: Bytes[] | null = nftEntity.appraisals;
+    let newAppraisals: Bytes[] | null = nftEntity.appraisals;
 
-    if (!appraisals) {
-      appraisals = [];
+    if (!newAppraisals) {
+      newAppraisals = [];
     }
-    appraisals.push(
+    newAppraisals.push(
       Bytes.fromByteArray(Bytes.fromBigInt(event.params.appraisalId))
     );
-    nftEntity.appraisals = appraisals;
+    nftEntity.appraisals = newAppraisals;
+    let data = appraisals.getNFT(event.params.nftId);
+
+    nftEntity.averageScore = data.averageScore;
+    nftEntity.appraisalCount = data.appraisalCount;
+    nftEntity.totalScore = data.totalScore;
     nftEntity.save();
+
+    entity.tokenType = nftEntity.tokenType;
   }
+
+  entity.save();
 }
 
 export function handleNFTRemoved(event: NFTRemovedEvent): void {

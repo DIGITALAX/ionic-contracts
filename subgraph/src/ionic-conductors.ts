@@ -1,9 +1,9 @@
 import { ByteArray, Bytes, store, BigInt } from "@graphprotocol/graph-ts";
 import {
   ConductorDeleted as ConductorDeletedEvent,
-  ConductorRegistered as ConductorRegisteredEvent,
   ConductorStatsUpdated as ConductorStatsUpdatedEvent,
   ConductorUpdated as ConductorUpdatedEvent,
+  ConductorCreated as ConductorCreatedEvent,
   IonicConductors,
   ReviewSubmitted as ReviewSubmittedEvent,
   ReviewerURIUpdated as ReviewerURIUpdatedEvent,
@@ -43,15 +43,12 @@ export function handleConductorDeleted(event: ConductorDeletedEvent): void {
   }
 }
 
-export function handleConductorRegistered(
-  event: ConductorRegisteredEvent
-): void {
+export function handleConductorCreated(event: ConductorCreatedEvent): void {
   let entity = new Conductor(
     Bytes.fromByteArray(Bytes.fromBigInt(event.params.conductorId))
   );
-  entity.wallet = event.params.wallet;
   entity.conductorId = event.params.conductorId;
-  entity.uri = event.params.uri;
+  entity.conductorId = event.params.conductorId;
 
   entity.blockNumber = event.block.number;
   entity.blockTimestamp = event.block.timestamp;
@@ -59,13 +56,7 @@ export function handleConductorRegistered(
 
   let conductor = IonicConductors.bind(event.address);
   let data = conductor.getConductor(event.params.conductorId);
-  entity.uri = event.params.uri;
 
-  let ipfsHash = (entity.uri as string).split("/").pop();
-  if (ipfsHash != null) {
-    entity.metadata = ipfsHash;
-    BaseMetadataTemplate.create(ipfsHash);
-  }
   entity.appraisalCount = data.stats.appraisalCount;
   entity.totalScore = data.stats.totalScore;
   entity.averageScore = data.stats.averageScore;
@@ -73,6 +64,7 @@ export function handleConductorRegistered(
   entity.totalReviewScore = data.stats.totalReviewScore;
   entity.averageReviewScore = data.stats.averageReviewScore;
   entity.inviteCount = data.stats.inviteCount;
+  entity.availableInvites = data.stats.availableInvites;
 
   entity.save();
 
@@ -187,6 +179,8 @@ export function handleReviewSubmitted(event: ReviewSubmittedEvent): void {
   if (!reviewer) {
     reviewer = new Reviewer(event.params.reviewer);
     reviewer.wallet = event.params.reviewer;
+    reviewer.blockTimestamp = event.block.timestamp;
+    reviewer.transactionHash = event.transaction.hash;
   }
 
   let reviews: Bytes[] | null = reviewer.reviews;
@@ -222,6 +216,7 @@ export function handleReviewSubmitted(event: ReviewSubmittedEvent): void {
     conductorEntity.averageReviewScore = data.stats.averageReviewScore;
     conductorEntity.totalReviewScore = data.stats.totalReviewScore;
     conductorEntity.reviews = reviews;
+    conductorEntity.reviewCount = data.stats.reviewCount;
 
     conductorEntity.save();
   }
@@ -233,6 +228,8 @@ export function handleReviewerURIUpdated(event: ReviewerURIUpdatedEvent): void {
   if (!entity) {
     entity = new Reviewer(event.params.reviewer);
     entity.wallet = event.params.reviewer;
+    entity.blockTimestamp = event.block.timestamp;
+    entity.transactionHash = event.transaction.hash;
   }
   entity.uri = event.params.uri;
 

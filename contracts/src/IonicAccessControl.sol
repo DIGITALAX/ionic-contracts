@@ -59,8 +59,8 @@ contract IonicAccessControl {
         return _admins[_address];
     }
 
-    function isConductor(address _address) public view returns (bool) {
-        return ERC721(ionicToken).balanceOf(_address) >= 1;
+    function isConductor(address conductor, uint256 tokenId) public view returns (bool) {
+        return ERC721(ionicToken).ownerOf(tokenId) == conductor;
     }
 
     function revokeAdminControl() external onlyAdmin {

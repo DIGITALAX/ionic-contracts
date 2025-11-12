@@ -8,6 +8,7 @@ type Appraisal @entity {
   overallScore: BigInt! # uint256
   blockNumber: BigInt!
   blockTimestamp: BigInt!
+  tokenType: Int!
   transactionHash: Bytes!
   uri: String!
   reactions: [ReactionUsage!]
@@ -53,20 +54,19 @@ type NFT @entity {
 type Conductor @entity {
   id: Bytes!
   metadata: BaseMetadata
-  wallet: Bytes! # address
   conductorId: BigInt! # uint256
-  uri: String! # string
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-  appraisalCount: BigInt!
-  totalScore: BigInt!
-  averageScore: BigInt!
-  reviewCount: BigInt!
-  totalReviewScore: BigInt!
-  averageReviewScore: BigInt!
-  inviteCount: BigInt!
-  availableInvites: BigInt!
+  uri: String # string
+  blockNumber: BigInt
+  blockTimestamp: BigInt
+  transactionHash: Bytes
+  appraisalCount: BigInt
+  totalScore: BigInt
+  averageScore: BigInt
+  reviewCount: BigInt
+  totalReviewScore: BigInt
+  averageReviewScore: BigInt
+  inviteCount: BigInt
+  availableInvites: BigInt
   appraisals: [Appraisal!]
   reviews: [Review!]
   invitedDesigners: [Designer!]
@@ -76,13 +76,15 @@ type Conductor @entity {
 type Reviewer @entity {
   id: Bytes!
   wallet: Bytes!
-  uri: String!
+  uri: String
   metadata: BaseMetadata
   reviews: [Review!]
-  reviewCount: BigInt!
-  totalScore: BigInt!
-  averageScore: BigInt!
-  lastReviewTimestamp: BigInt!
+  reviewCount: BigInt
+  totalScore: BigInt
+  averageScore: BigInt
+  transactionHash: Bytes
+  blockTimestamp: BigInt
+  lastReviewTimestamp: BigInt
 }
 
 type Review @entity {
@@ -133,6 +135,7 @@ type ReactionPack @entity {
   priceIncrement: BigInt!
   conductorReservedSpots: BigInt!
   active: Boolean!
+  blockTimestamp: BigInt!
   packUri: String!
   packMetadata: BaseMetadata
   reactions: [Reaction!]!
@@ -178,4 +181,59 @@ type ReactionMetadata @entity {
 type ConductorRegistry @entity {
   id: String!
   conductorIds: [BigInt!]!
+}
+type Approval @entity(immutable: true) {
+  id: Bytes!
+  owner: Bytes! # address
+  approved: Bytes! # address
+  tokenId: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type ApprovalForAll @entity(immutable: true) {
+  id: Bytes!
+  owner: Bytes! # address
+  operator: Bytes! # address
+  approved: Boolean! # bool
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type MintersAuthorized @entity(immutable: true) {
+  id: Bytes!
+  minters: [Bytes!]! # tuple[]
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type TokenMinted @entity(immutable: true) {
+  id: Bytes!
+  minter: Bytes! # address
+  tokenId: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type TokenURIUpdated @entity(immutable: true) {
+  id: Bytes!
+  reason: BigInt! # uint256
+  uri: String! # string
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}
+
+type Transfer @entity(immutable: true) {
+  id: Bytes!
+  from: Bytes! # address
+  to: Bytes! # address
+  tokenId: BigInt! # uint256
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
 }

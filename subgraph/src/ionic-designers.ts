@@ -55,13 +55,20 @@ export function handleDesignerInvited(event: DesignerInvitedEvent): void {
   let conductorEntity = Conductor.load(
     Bytes.fromByteArray(Bytes.fromBigInt(dataConductor.conductorId))
   );
+  if (!conductorEntity) {
+    conductorEntity = new Conductor(
+      Bytes.fromByteArray(Bytes.fromBigInt(dataConductor.conductorId))
+    );
+  }
   if (conductorEntity) {
     let designers: Bytes[] | null = conductorEntity.invitedDesigners;
     if (!designers) {
       designers = [];
     }
 
-    designers.push(event.params.designer);
+    designers.push(
+      Bytes.fromByteArray(Bytes.fromBigInt(event.params.designerId))
+    );
     conductorEntity.inviteCount = dataConductor.stats.inviteCount;
     conductorEntity.availableInvites = dataConductor.stats.availableInvites;
     conductorEntity.invitedDesigners = designers;

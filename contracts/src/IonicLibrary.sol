@@ -10,7 +10,6 @@ contract IonicLibrary {
     }
 
     struct Conductor {
-        address wallet;
         uint256 conductorId;
         string uri;
         ConductorStats stats;

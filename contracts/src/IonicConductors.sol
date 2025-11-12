@@ -5,10 +5,12 @@ import "./IonicErrors.sol";
 import "./IonicAccessControl.sol";
 import "./IonicLibrary.sol";
 import "./IonicReactionPacks.sol";
+import "./IonicNFT.sol";
 
 contract IonicConductors {
     IonicAccessControl public accessControl;
-    uint256 private conductorCount;
+    IonicReactionPacks public reactionPacks;
+    IonicNFT public nft;
     uint256 private reviewCount;
     uint256 public constant MAX_TRUST_SCORE = 100;
     uint256 public constant MIN_TRUST_SCORE = 1;
@@ -16,7 +18,6 @@ contract IonicConductors {
     uint256 public constant TRUST_INVITE_THRESHOLD = 50;
     address public appraisals;
     address public designers;
-    IonicReactionPacks public reactionPacks;
     string public symbol;
     string public name;
 
@@ -31,19 +32,22 @@ contract IonicConductors {
         _;
     }
 
-    modifier onlyConductor() {
-        if (!accessControl.isConductor(msg.sender)) {
+    modifier onlyNFT() {
+        if (msg.sender != address(nft)) {
+            revert IonicErrors.Unauthorized();
+        }
+        _;
+    }
+
+    modifier onlyConductor(uint256 tokenId) {
+        if (!accessControl.isConductor(msg.sender, tokenId)) {
             revert IonicErrors.Unauthorized();
         }
 
         _;
     }
 
-    event ConductorRegistered(
-        address indexed wallet,
-        uint256 indexed conductorId,
-        string uri
-    );
+    event ConductorCreated(address indexed wallet, uint256 indexed conductorId);
     event ConductorDeleted(uint256 indexed conductorId, address wallet);
     event ConductorUpdated(uint256 indexed conductorId, string uri);
     event ConductorStatsUpdated(
@@ -59,40 +63,37 @@ contract IonicConductors {
         uint256 reviewScore
     );
 
-    constructor(address _accessControl) {
-        conductorCount = 0;
+    constructor(address _accessControl, address _nft) {
         reviewCount = 0;
         symbol = "HOL";
         name = "Conductor";
+        nft = IonicNFT(_nft);
         accessControl = IonicAccessControl(_accessControl);
     }
 
-    function registerProfile(string memory uri) external onlyConductor {
-        conductorCount++;
-
-        _conductors[conductorCount] = IonicLibrary.Conductor({
-            wallet: msg.sender,
-            conductorId: conductorCount,
-            uri: uri,
-            stats: IonicLibrary.ConductorStats({
-                appraisalCount: 0,
-                totalScore: 0,
-                averageScore: 0,
-                reviewCount: 0,
-                totalReviewScore: 0,
-                averageReviewScore: 0,
-                inviteCount: 0,
-                availableInvites: 1,
-                appraisalIds: new uint256[](0),
-                reviewIds: new uint256[](0),
-                invitedDesigners: new uint256[](0)
-            })
+    function createConductor(
+        uint256 tokenId,
+        address conductor
+    ) external onlyNFT {
+        _conductors[tokenId].conductorId = tokenId;
+        _conductors[tokenId].stats = IonicLibrary.ConductorStats({
+            appraisalCount: 0,
+            totalScore: 0,
+            averageScore: 0,
+            reviewCount: 0,
+            totalReviewScore: 0,
+            averageReviewScore: 0,
+            inviteCount: 0,
+            availableInvites: 1,
+            appraisalIds: new uint256[](0),
+            reviewIds: new uint256[](0),
+            invitedDesigners: new uint256[](0)
         });
 
-        emit ConductorRegistered(msg.sender, conductorCount, uri);
+        emit ConductorCreated(conductor, tokenId);
     }
 
-    function deleteProfile(uint256 conductorId) external onlyConductor {
+    function deleteProfile(uint256 conductorId) external onlyConductor(conductorId) {
         delete _conductors[conductorId];
         emit ConductorDeleted(conductorId, msg.sender);
     }
@@ -100,12 +101,8 @@ contract IonicConductors {
     function updateProfile(
         uint256 conductorId,
         string memory uri
-    ) external onlyConductor {
+    ) external onlyConductor(conductorId) {
         IonicLibrary.Conductor storage conductor = _conductors[conductorId];
-
-        if (conductor.conductorId == 0 || conductor.wallet != msg.sender) {
-            revert IonicErrors.ConductorNotFound();
-        }
 
         conductor.uri = uri;
         emit ConductorUpdated(conductorId, uri);
@@ -150,33 +147,59 @@ contract IonicConductors {
         string memory uri,
         IonicLibrary.ReactionUsage[] memory reactions
     ) external {
+        _validateReviewScore(reviewScore);
+        _validateReactions(msg.sender, reactions);
+
+        uint256 newReviewId = _recordReview(
+            conductorId,
+            reviewScore,
+            uri,
+            reactions
+        );
+        _updateReviewerStats(reviewScore, newReviewId);
+        _updateConductorReviewStats(conductorId, reviewScore, newReviewId);
+
+        emit ReviewSubmitted(msg.sender, conductorId, newReviewId, reviewScore);
+    }
+
+    function _validateReviewScore(uint256 reviewScore) private pure {
         if (reviewScore < MIN_TRUST_SCORE || reviewScore > MAX_TRUST_SCORE) {
             revert IonicErrors.InvalidReviewScore();
         }
+    }
 
+    function _recordReview(
+        uint256 conductorId,
+        uint256 reviewScore,
+        string memory uri,
+        IonicLibrary.ReactionUsage[] memory reactions
+    ) private returns (uint256) {
         IonicLibrary.Conductor storage conductor = _conductors[conductorId];
         if (conductor.conductorId == 0) {
             revert IonicErrors.ConductorNotFound();
         }
 
-        _validateReactions(msg.sender, reactions);
-
         reviewCount++;
 
-        _reviews[reviewCount] = IonicLibrary.Review({
-            reviewer: msg.sender,
-            reviewId: reviewCount,
-            conductorId: conductorId,
-            reviewScore: reviewScore,
-            timestamp: block.timestamp,
-            uri: uri,
-            reactions: new IonicLibrary.ReactionUsage[](0)
-        });
+        IonicLibrary.Review storage review = _reviews[reviewCount];
+        review.reviewer = msg.sender;
+        review.reviewId = reviewCount;
+        review.conductorId = conductorId;
+        review.reviewScore = reviewScore;
+        review.timestamp = block.timestamp;
+        review.uri = uri;
 
         for (uint256 i = 0; i < reactions.length; i++) {
-            _reviews[reviewCount].reactions.push(reactions[i]);
+            review.reactions.push(reactions[i]);
         }
 
+        return reviewCount;
+    }
+
+    function _updateReviewerStats(
+        uint256 reviewScore,
+        uint256 reviewId
+    ) private {
         if (_reviewers[msg.sender].reviewer == address(0)) {
             _reviewers[msg.sender].reviewer = msg.sender;
             _reviewers[msg.sender].uri = "";
@@ -185,19 +208,26 @@ contract IonicConductors {
         IonicLibrary.Reviewer storage reviewer = _reviewers[msg.sender];
         reviewer.stats.reviewCount++;
         reviewer.stats.totalScore += reviewScore;
-        reviewer.stats.averageScore = reviewer.stats.totalScore / reviewer.stats.reviewCount;
+        reviewer.stats.averageScore =
+            reviewer.stats.totalScore /
+            reviewer.stats.reviewCount;
         reviewer.stats.lastReviewTimestamp = block.timestamp;
         reviewer.stats.scoreDistribution[reviewScore]++;
-        reviewer.stats.reviewIds.push(reviewCount);
+        reviewer.stats.reviewIds.push(reviewId);
+    }
 
+    function _updateConductorReviewStats(
+        uint256 conductorId,
+        uint256 reviewScore,
+        uint256 reviewId
+    ) private {
+        IonicLibrary.Conductor storage conductor = _conductors[conductorId];
         conductor.stats.reviewCount++;
         conductor.stats.totalReviewScore += reviewScore;
         conductor.stats.averageReviewScore =
             conductor.stats.totalReviewScore /
             conductor.stats.reviewCount;
-        conductor.stats.reviewIds.push(reviewCount);
-
-        emit ReviewSubmitted(msg.sender, conductorId, reviewCount, reviewScore);
+        conductor.stats.reviewIds.push(reviewId);
     }
 
     function updateReviewerURI(string memory uri) external {
@@ -214,10 +244,6 @@ contract IonicConductors {
         uint256 conductorId
     ) external view returns (IonicLibrary.Conductor memory) {
         return _conductors[conductorId];
-    }
-
-    function getConductorCount() public view returns (uint256) {
-        return conductorCount;
     }
 
     function getReviewCount() external view returns (uint256) {
@@ -254,12 +280,29 @@ contract IonicConductors {
     function getConductorByWallet(
         address wallet
     ) external view returns (IonicLibrary.Conductor memory) {
-        for (uint256 i = 1; i <= conductorCount; i++) {
-            if (_conductors[i].wallet == wallet) {
-                return _conductors[i];
-            }
+        uint256 balance = nft.balanceOf(wallet);
+        if (balance == 0) {
+            revert IonicErrors.ConductorNotFound();
         }
-        revert IonicErrors.ConductorNotFound();
+        uint256 tokenId = nft.tokenOfOwnerByIndex(wallet, 0);
+        return _conductors[tokenId];
+    }
+
+    function getConductorId(address wallet) external view returns (uint256) {
+        uint256 balance = nft.balanceOf(wallet);
+        if (balance == 0) {
+            return 0;
+        }
+        return nft.tokenOfOwnerByIndex(wallet, 0);
+    }
+
+    function getConductorIdByTokenId(
+        uint256 tokenId
+    ) external view returns (uint256) {
+        if (_conductors[tokenId].conductorId != 0) {
+            return tokenId;
+        }
+        return 0;
     }
 
     function getReview(
@@ -317,7 +360,15 @@ contract IonicConductors {
         designers = _designers;
     }
 
+    function setNFT(address _nft) public onlyAdmin {
+        nft = IonicNFT(_nft);
+    }
+
     function setReactionPacks(address _reactionPacks) public onlyAdmin {
         reactionPacks = IonicReactionPacks(_reactionPacks);
+    }
+
+    function deleteConductor(uint256 tokenId) external onlyNFT {
+        delete _conductors[tokenId];
     }
 }

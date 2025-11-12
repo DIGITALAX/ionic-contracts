@@ -56,6 +56,10 @@ export function handlePackPurchased(event: PackPurchasedEvent): void {
       Bytes.fromByteArray(Bytes.fromBigInt(event.params.purchaseId))
     );
     entityPack.purchases = purchases;
+
+    entityPack.currentPrice = data.currentPrice;
+    entityPack.maxEditions = data.maxEditions;
+    entityPack.soldCount = data.soldCount;
     entityPack.save();
 
     let reactions = entityPack.reactions;
@@ -116,9 +120,8 @@ export function handleReactionPackCreated(
   ).designerId;
 
   entity.designer = event.params.designer;
-  entity.designerProfile = Bytes.fromByteArray(
-    Bytes.fromBigInt(designerId)
-  );
+  entity.designerProfile = Bytes.fromByteArray(Bytes.fromBigInt(designerId));
+  entity.blockTimestamp = event.block.timestamp;
 
   entity.packId = event.params.packId;
   entity.basePrice = event.params.basePrice;
@@ -162,6 +165,7 @@ export function handleReactionPackCreated(
     }
     packs.push(Bytes.fromByteArray(Bytes.fromBigInt(event.params.packId)));
     designerEntity.reactionPacks = packs;
+    designerEntity.packCount = designerEntity.packCount.plus(BigInt.fromI32(1));
     designerEntity.save();
   }
 }

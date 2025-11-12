@@ -9,7 +9,7 @@ import "./IonicConductors.sol";
 contract IonicDesigners {
     IonicAccessControl public accessControl;
     IonicConductors public conductors;
-    uint256 private designerCount;
+    uint256 private _designerCount;
 
     mapping(uint256 => IonicLibrary.Designer) private _designers;
     mapping(address => uint256) private _designerLookup;
@@ -21,10 +21,11 @@ contract IonicDesigners {
         _;
     }
 
-    modifier onlyConductor() {
-        if (!accessControl.isConductor(msg.sender)) {
+    modifier onlyConductor(uint256 tokenId) {
+        if (!accessControl.isConductor(msg.sender, tokenId)) {
             revert IonicErrors.Unauthorized();
         }
+
         _;
     }
 
@@ -42,28 +43,28 @@ contract IonicDesigners {
     constructor(address _accessControl, address _conductors) {
         accessControl = IonicAccessControl(_accessControl);
         conductors = IonicConductors(_conductors);
-        designerCount = 0;
+        _designerCount = 0;
     }
 
     function inviteDesigner(
-        address designer,
-        uint256 conductorId
-    ) external onlyConductor {
+        uint256 conductorId,
+        address designer
+    ) external onlyConductor(conductorId) {
         if (_designers[_designerLookup[designer]].active) {
             revert IonicErrors.AlreadyExists();
         }
 
-        IonicLibrary.Conductor memory conductor = conductors.getConductor(conductorId);
-
-        if (conductor.stats.availableInvites == 0) {
-            revert IonicErrors.NoInvitesAvailable();
+        if (conductorId == 0) {
+            revert IonicErrors.ConductorNotFound();
         }
+
+        _validateConductorInvites(conductorId);
 
         uint256 designerId = _designerLookup[designer];
 
         if (designerId == 0) {
-            designerCount++;
-            designerId = designerCount;
+            _designerCount++;
+            designerId = _designerCount;
 
             _designers[designerId] = IonicLibrary.Designer({
                 wallet: designer,
@@ -83,9 +84,18 @@ contract IonicDesigners {
             _designers[designerId].active = true;
         }
 
-        _updateConductorInviteStats(conductor.conductorId, designerId);
+        _updateConductorInviteStats(conductorId, designerId);
 
         emit DesignerInvited(designer, msg.sender, designerId);
+    }
+
+    function _validateConductorInvites(uint256 conductorId) private view {
+        IonicLibrary.Conductor memory conductor = conductors.getConductor(
+            conductorId
+        );
+        if (conductor.stats.availableInvites == 0) {
+            revert IonicErrors.NoInvitesAvailable();
+        }
     }
 
     function setDesignerURI(uint256 designerId, string memory uri) public {
@@ -118,10 +128,10 @@ contract IonicDesigners {
 
         designer.active = false;
 
-        IonicLibrary.Conductor memory inviter = conductors.getConductorByWallet(
+        uint256 inviterConductorId = conductors.getConductorId(
             designer.invitedBy
         );
-        _returnInviteToConductor(inviter.conductorId);
+        _returnInviteToConductor(inviterConductorId);
 
         emit DesignerDeactivated(designerId, msg.sender);
     }
@@ -159,7 +169,7 @@ contract IonicDesigners {
     }
 
     function getDesignerCount() external view returns (uint256) {
-        return designerCount;
+        return _designerCount;
     }
 
     function setAccessControl(address _accessControl) external onlyAdmin {

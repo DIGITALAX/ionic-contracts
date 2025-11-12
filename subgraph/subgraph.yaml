@@ -8,9 +8,9 @@ dataSources:
     name: IonicAppraisals
     network: lens-testnet
     source:
-      address: "0x37f11Ca71E0d705582fE5642dFb042f889470731"
+      address: "0xd83Ce31575E465694bdcb8E3688B189a39f34eA7"
       abi: IonicAppraisals
-      startBlock: 4120053
+      startBlock: 4195513
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -34,9 +34,9 @@ dataSources:
     name: IonicConductors
     network: lens-testnet
     source:
-      address: "0x37f11Ca71E0d705582fE5642dFb042f889470731"
+      address: "0xC6CcCebF8c151f253d5AdCDE5bd3F09d4a75caaD"
       abi: IonicConductors
-      startBlock: 4120053
+      startBlock: 4195513
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -51,8 +51,8 @@ dataSources:
       eventHandlers:
         - event: ConductorDeleted(indexed uint256,address)
           handler: handleConductorDeleted
-        - event: ConductorRegistered(indexed address,indexed uint256,string)
-          handler: handleConductorRegistered
+        - event: ConductorCreated(indexed address,indexed uint256)
+          handler: handleConductorCreated
         - event: ConductorStatsUpdated(indexed uint256,uint256,uint256)
           handler: handleConductorStatsUpdated
         - event: ConductorUpdated(indexed uint256,string)
@@ -66,9 +66,9 @@ dataSources:
     name: IonicReactionPacks
     network: lens-testnet
     source:
-      address: "0x37f11Ca71E0d705582fE5642dFb042f889470731"
+      address: "0x553bad5BeD228A5B96153Dd397DcE9e6F76B45C4"
       abi: IonicReactionPacks
-      startBlock: 4120053
+      startBlock: 4195513
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -95,9 +95,9 @@ dataSources:
     name: IonicDesigners
     network: lens-testnet
     source:
-      address: "0x37f11Ca71E0d705582fE5642dFb042f889470731"
+      address: "0xb87C571737536F8A4F26da0ce6518ecfE9e92C6f"
       abi: IonicDesigners
-      startBlock: 4120053
+      startBlock: 4195513
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -117,6 +117,41 @@ dataSources:
         - event: DesignerURI(indexed uint256,string)
           handler: handleDesignerURI
       file: ./src/ionic-designers.ts
+  - kind: ethereum
+    name: IonicNFT
+    network: lens-testnet
+    source:
+      address: "0xb8CfdBEF2721C51d8cC76Cd0FaA6B9799bF05123"
+      abi: IonicNFT
+      startBlock: 4195513
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      entities:
+        - Approval
+        - ApprovalForAll
+        - MintersAuthorized
+        - TokenMinted
+        - TokenURIUpdated
+        - Transfer
+      abis:
+        - name: IonicNFT
+          file: ./abis/IonicNFT.json
+      eventHandlers:
+        - event: Approval(indexed address,indexed address,indexed uint256)
+          handler: handleApproval
+        - event: ApprovalForAll(indexed address,indexed address,bool)
+          handler: handleApprovalForAll
+        - event: MintersAuthorized((address,uint256)[])
+          handler: handleMintersAuthorized
+        - event: TokenMinted(indexed address,indexed uint256)
+          handler: handleTokenMinted
+        - event: TokenURIUpdated(uint256,string)
+          handler: handleTokenURIUpdated
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
+      file: ./src/ionic-nft.ts
 templates:
   - name: Metadata
     kind: file/ipfs
@@ -127,6 +162,7 @@ templates:
       handler: handleMetadata
       entities:
         - Metadata
+        - ResponseMetadata
       abis:
         - name: IonicConductors
           file: ./abis/IonicConductors.json
