@@ -1,11 +1,9 @@
 {
-  "accessControl": "0x7E1aa4b8Fa6633F944C6F9F17267C81f8B7c1e1a",
-  "conductors": "",
-  "appraisals": "",
-  "designers": "",
-  "reactionPacks": "",
-  "nft": "0x8E2318511fFCc846EA646902a8cb8326F4d07E56",
+  "accessControl": "0x1b9d908234fF4B4Bf83acE5D9F65c941cbb950cf",
+  "conductors": "0x3DA267952b20b6a9953093b80b76d70ceF0C6A18",
+  "appraisals": "0x99a5E4AF49D13bfa45341D1a120A86a071a0D2ED",
+  "designers": "0x7867d89afc4197c4108AC658f29DdE31693c2873",
+  "reactionPacks": "0xb33AF8B96aE53bE1B890faD0AA6e06A435e03c13",
+  "nft": "0x160694488154F67c70208cBA1fa3dDb8B7FF8738",
   "genesis": "0xE69dAB02100d3989bCA736a0FE1239CbFcf2cE01"
 }
-
-

@@ -6,9 +6,9 @@ schema:
 dataSources:
   - kind: ethereum
     name: IonicAppraisals
-    network: lens-testnet
+    network: lens
     source:
-      address: "0xd83Ce31575E465694bdcb8E3688B189a39f34eA7"
+      address: "0x99a5E4AF49D13bfa45341D1a120A86a071a0D2ED"
       abi: IonicAppraisals
       startBlock: 4195513
     mapping:
@@ -32,9 +32,9 @@ dataSources:
       file: ./src/ionic-appraisals.ts
   - kind: ethereum
     name: IonicConductors
-    network: lens-testnet
+    network: lens
     source:
-      address: "0xC6CcCebF8c151f253d5AdCDE5bd3F09d4a75caaD"
+      address: "0x3DA267952b20b6a9953093b80b76d70ceF0C6A18"
       abi: IonicConductors
       startBlock: 4195513
     mapping:
@@ -64,9 +64,9 @@ dataSources:
       file: ./src/ionic-conductors.ts
   - kind: ethereum
     name: IonicReactionPacks
-    network: lens-testnet
+    network: lens
     source:
-      address: "0x553bad5BeD228A5B96153Dd397DcE9e6F76B45C4"
+      address: "0xb33AF8B96aE53bE1B890faD0AA6e06A435e03c13"
       abi: IonicReactionPacks
       startBlock: 4195513
     mapping:
@@ -93,9 +93,9 @@ dataSources:
       file: ./src/ionic-reaction-packs.ts
   - kind: ethereum
     name: IonicDesigners
-    network: lens-testnet
+    network: lens
     source:
-      address: "0xb87C571737536F8A4F26da0ce6518ecfE9e92C6f"
+      address: "0x7867d89afc4197c4108AC658f29DdE31693c2873"
       abi: IonicDesigners
       startBlock: 4195513
     mapping:
@@ -119,9 +119,9 @@ dataSources:
       file: ./src/ionic-designers.ts
   - kind: ethereum
     name: IonicNFT
-    network: lens-testnet
+    network: lens
     source:
-      address: "0xb8CfdBEF2721C51d8cC76Cd0FaA6B9799bF05123"
+      address: "0x160694488154F67c70208cBA1fa3dDb8B7FF8738"
       abi: IonicNFT
       startBlock: 4195513
     mapping:
